@@ -628,16 +628,46 @@
 
             myChart.off('click');
             myChart.on('click', function(params) {
-                if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
-                    const provinceName = params.name;
-                    const adcode = provinceAdcodeMap[provinceName];
-                    if (adcode) {
-                        drillDown(adcode, provinceName);
-                    } else {
-                        console.warn('未找到省份adcode:', provinceName);
+    if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
+        let provinceName = params.name;
+        let adcode = provinceAdcodeMap[provinceName];
+
+        // 如果直接查找失败，尝试去除常见后缀后再匹配
+        if (!adcode) {
+            const suffixes = ['省', '市', '自治区', '特别行政区', '壮族自治区', '回族自治区', '维吾尔自治区'];
+            let shortName = provinceName;
+            for (let suffix of suffixes) {
+                if (provinceName.endsWith(suffix)) {
+                    shortName = provinceName.slice(0, -suffix.length);
+                    break;
+                }
+            }
+            // 用短名称遍历所有键，找到包含该短名称的键（模糊匹配）
+            for (let key in provinceAdcodeMap) {
+                if (key === provinceName || key === shortName || key.includes(shortName)) {
+                    adcode = provinceAdcodeMap[key];
+                    break;
+                }
+            }
+            // 如果还找不到，尝试用原名称 + "省" 等组合（针对“内蒙古”等特殊情况）
+            if (!adcode) {
+                const possibleFull = [provinceName + '省', provinceName + '市', provinceName + '自治区'];
+                for (let full of possibleFull) {
+                    if (provinceAdcodeMap[full]) {
+                        adcode = provinceAdcodeMap[full];
+                        break;
                     }
                 }
-            });
+            }
+        }
+
+        if (adcode) {
+            drillDown(adcode, provinceName);
+        } else {
+            console.warn('未找到省份adcode:', provinceName);
+        }
+    }
+});
 
             const resizeHandler = () => { if (myChart) myChart.resize(); };
             window.removeEventListener('resize', resizeHandler);
