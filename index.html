@@ -2,132 +2,27 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />  <!-- 添加此行，避免403 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>中国高校分布地图 - 悬停显示三经费折线（外部JSON）</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js">
     </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background: #f5f9fc;
-            font-family: system-ui, sans-serif;
-        }
-        #map-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-            background: #f5f9fc;
-        }
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 18px;
-            color: #555;
-            background: #fff;
-            padding: 20px 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-        }
-        .map-controls {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 20;
-        }
-        .map-controls button {
-            width: 44px;
-            height: 44px;
-            border: none;
-            border-radius: 50%;
-            background: #ffffff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-        }
-        .map-controls button:hover {
-            background: #f0f0f0;
-            transform: scale(1.05);
-        }
-        .map-controls button:active {
-            transform: scale(0.95);
-        }
-        .map-controls button .icon {
-            line-height: 1;
-        }
-        .map-controls button.fullscreen .icon {
-            font-size: 18px;
-        }
-        #btn-back {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 20;
-            padding: 10px 18px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            display: none;
-            transition: all 0.2s;
-        }
-        #btn-back:hover {
-            background: #ffffff;
-            transform: scale(1.02);
-        }
-        @media (max-width: 600px) {
-            .map-controls {
-                bottom: 20px;
-                right: 20px;
-                gap: 8px;
-            }
-            .map-controls button {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
-            #btn-back {
-                top: 10px;
-                left: 10px;
-                padding: 8px 14px;
-                font-size: 14px;
-            }
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
-        }
+        /* 样式保持不变，此处省略（您已有完整样式） */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:#f5f9fc; font-family:system-ui, sans-serif; }
+        #map-container { width:100vw; height:100vh; position:relative; background:#f5f9fc; }
+        #loading { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:18px; color:#555; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.1); z-index:10; }
+        .map-controls { position:fixed; bottom:30px; right:30px; display:flex; flex-direction:column; gap:10px; z-index:20; }
+        .map-controls button { width:44px; height:44px; border:none; border-radius:50%; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:20px; font-weight:bold; color:#333; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; user-select:none; }
+        .map-controls button:hover { background:#f0f0f0; transform:scale(1.05); }
+        .map-controls button:active { transform:scale(0.95); }
+        .map-controls button .icon { line-height:1; }
+        .map-controls button.fullscreen .icon { font-size:18px; }
+        #btn-back { position:fixed; top:20px; left:20px; z-index:20; padding:10px 18px; background:rgba(255,255,255,0.9); border:none; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:16px; font-weight:bold; color:#333; cursor:pointer; display:none; transition:all 0.2s; }
+        #btn-back:hover { background:#ffffff; transform:scale(1.02); }
+        @media (max-width:600px) { .map-controls { bottom:20px; right:20px; gap:8px; } .map-controls button { width:40px; height:40px; font-size:18px; } #btn-back { top:10px; left:10px; padding:8px 14px; font-size:14px; } }
+        ::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; } ::-webkit-scrollbar-thumb { background:#c1c1c1; border-radius:3px; } ::-webkit-scrollbar-thumb:hover { background:#a8a8a8; }
     </style>
 </head>
 <body>
@@ -142,7 +37,7 @@
     </div>
 
     <script>
-        // ===================== 原始数据（省份、城市、高校列表）保持不变 =====================
+        // ===================== 省份/城市数据（保持全称，与 fullname 一致） =====================
         const provinceUniversityData = {
             '北京市': ['清华大学', '北京大学', '中国人民大学', '北京航空航天大学', '北京师范大学'],
             '上海市': ['复旦大学', '上海交通大学', '同济大学', '华东师范大学'],
@@ -179,26 +74,19 @@
         };
 
         const cityUniversityData = {
-            '北京市': { '东城区': ['北京工业大学', '北京联合大学'], '西城区': ['中国人民大学', '北京师范大学'], '朝阳区': [
-                    '北京化工大学', '中国传媒大学'
-                ], '海淀区': ['清华大学', '北京大学', '北京航空航天大学', '北京理工大学'], '丰台区': ['首都经济贸易大学'] },
-            '上海市': { '黄浦区': ['上海交通大学医学院'], '徐汇区': ['上海交通大学', '华东理工大学'], '杨浦区': ['复旦大学', '同济大学',
-                    '上海财经大学'
-                ], '闵行区': ['上海交通大学（闵行）', '华东师范大学'] },
-            '广东省': { '广州市': ['中山大学', '华南理工大学', '暨南大学', '华南师范大学'], '深圳市': ['深圳大学', '南方科技大学',
-                    '香港中文大学（深圳）'
-                ], '珠海市': ['北京师范大学-香港浸会大学联合国际学院'], '佛山市': ['佛山科学技术学院'] },
-            '江苏省': { '南京市': ['南京大学', '东南大学', '南京航空航天大学', '南京理工大学'], '苏州市': ['苏州大学', '西交利物浦大学'],
-                '无锡市': ['江南大学'], '常州市': ['常州大学'] },
+            '北京市': { '东城区': ['北京工业大学', '北京联合大学'], '西城区': ['中国人民大学', '北京师范大学'], '朝阳区': ['北京化工大学', '中国传媒大学'], '海淀区': ['清华大学', '北京大学', '北京航空航天大学', '北京理工大学'], '丰台区': ['首都经济贸易大学'] },
+            '上海市': { '黄浦区': ['上海交通大学医学院'], '徐汇区': ['上海交通大学', '华东理工大学'], '杨浦区': ['复旦大学', '同济大学', '上海财经大学'], '闵行区': ['上海交通大学（闵行）', '华东师范大学'] },
+            '广东省': { '广州市': ['中山大学', '华南理工大学', '暨南大学', '华南师范大学'], '深圳市': ['深圳大学', '南方科技大学', '香港中文大学（深圳）'], '珠海市': ['北京师范大学-香港浸会大学联合国际学院'], '佛山市': ['佛山科学技术学院'] },
+            '江苏省': { '南京市': ['南京大学', '东南大学', '南京航空航天大学', '南京理工大学'], '苏州市': ['苏州大学', '西交利物浦大学'], '无锡市': ['江南大学'], '常州市': ['常州大学'] },
             '浙江省': { '杭州市': ['浙江大学', '浙江工业大学', '杭州电子科技大学'], '宁波市': ['宁波大学'], '温州市': ['温州大学'] },
             '湖北省': { '武汉市': ['武汉大学', '华中科技大学', '武汉理工大学', '华中师范大学'], '宜昌市': ['三峡大学'] },
             '四川省': { '成都市': ['四川大学', '电子科技大学', '西南交通大学', '西南财经大学'], '绵阳市': ['西南科技大学'] },
         };
 
-        // ===================== ★ 高校坐标数据将从外部 JSON 加载 ★ =====================
+        // ===================== 高校坐标数据从外部 JSON 加载 =====================
         let universityLocations = [];
 
-        // ===================== 三种经费模拟数据（保持不变） =====================
+        // ===================== 三种经费模拟数据 =====================
         const provinceFunding = {};
 
         function seededRandom(seed) {
@@ -212,26 +100,20 @@
         for (const province in provinceUniversityData) {
             let totalBase = 50 + rand() * 100;
             const years = [2021, 2022, 2023, 2024, 2025];
-            const research = [],
-                teaching = [],
-                other = [];
+            const research = [], teaching = [], other = [];
             years.forEach((_, i) => {
                 if (i === 0) {
                     const r = Math.round(totalBase * (0.40 + rand() * 0.20));
                     const t = Math.round(totalBase * (0.25 + rand() * 0.10));
                     const o = Math.round(totalBase - r - t);
-                    research.push(r);
-                    teaching.push(t);
-                    other.push(o);
+                    research.push(r); teaching.push(t); other.push(o);
                 } else {
                     const growth = 1 + (0.05 + rand() * 0.18);
                     totalBase = totalBase * growth;
                     const r = Math.round(totalBase * (0.40 + rand() * 0.20));
                     const t = Math.round(totalBase * (0.25 + rand() * 0.10));
                     const o = Math.round(totalBase - r - t);
-                    research.push(r);
-                    teaching.push(t);
-                    other.push(o);
+                    research.push(r); teaching.push(t); other.push(o);
                 }
             });
             provinceFunding[province] = { research, teaching, other };
@@ -266,17 +148,19 @@
         const defaultCenter = [105, 35];
         const geoUrl = 'https://geojson.cn/api/data/china.json';
 
+        // ★ 关键修改：提取 fullname 和 code (而非 name 和 adcode) ★
         function extractProvinceAdcode(geoJson) {
             const map = {};
             geoJson.features.forEach(feature => {
-                const name = feature.properties.name;
-                const adcode = feature.properties.adcode;
+                const name = feature.properties.fullname;   // 全称（如“北京市”）
+                const adcode = feature.properties.code;      // 该数据源用 code 存储 adcode
                 if (name && adcode) map[name] = adcode;
             });
+            console.log('提取到的省份adcode映射：', map);
             return map;
         }
 
-        // ===================== 生成三条折线 SVG =====================
+        // ===================== 生成三条折线 SVG（保持不变） =====================
         function buildFundingSVG(provinceName, data) {
             if (!data || !data.research || !data.teaching || !data.other) {
                 return '<div>暂无数据</div>';
@@ -286,8 +170,7 @@
             const maxVal = Math.max(...allVals) * 1.2;
             const minVal = Math.min(...allVals) * 0.8;
             const range = maxVal - minVal || 1;
-            const svgWidth = 380,
-                svgHeight = 200;
+            const svgWidth = 380, svgHeight = 200;
             const padding = { top: 30, bottom: 30, left: 45, right: 20 };
             const plotWidth = svgWidth - padding.left - padding.right;
             const plotHeight = svgHeight - padding.top - padding.bottom;
@@ -303,10 +186,7 @@
             const teachingPoints = calcPoints(data.teaching);
             const otherPoints = calcPoints(data.other);
 
-            function pointsStr(pts) {
-                return pts.map(p => `${p.x},${p.y}`).join(' ');
-            }
-
+            function pointsStr(pts) { return pts.map(p => `${p.x},${p.y}`).join(' '); }
             function calcLength(pts) {
                 let len = 0;
                 for (let i = 1; i < pts.length; i++) {
@@ -316,7 +196,6 @@
                 }
                 return len;
             }
-
             const rLen = calcLength(researchPoints);
             const tLen = calcLength(teachingPoints);
             const oLen = calcLength(otherPoints);
@@ -332,16 +211,14 @@
                 let html = '';
                 pts.forEach((p, i) => {
                     html += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;
-                    html +=
-                        `<text x="${p.x}" y="${p.y + offsetY}" text-anchor="middle" font-size="10" fill="${color}" font-weight="600">${p.val}</text>`;
+                    html += `<text x="${p.x}" y="${p.y + offsetY}" text-anchor="middle" font-size="10" fill="${color}" font-weight="600">${p.val}</text>`;
                 });
                 return html;
             }
 
             let yearLabels = '';
             researchPoints.forEach((p, i) => {
-                yearLabels +=
-                    `<text x="${p.x}" y="${svgHeight - 6}" text-anchor="middle" font-size="10" fill="#666">${years[i]}</text>`;
+                yearLabels += `<text x="${p.x}" y="${svgHeight - 6}" text-anchor="middle" font-size="10" fill="#666">${years[i]}</text>`;
             });
 
             const legendHtml = `
@@ -374,30 +251,16 @@
             return svg;
         }
 
-        // ===================== getOption =====================
+        // ===================== getOption（保持不变） =====================
         function getOption(mapName, data, center, zoom, tooltipData, visualMax, scatterData = [], showScatter = true, view = 'china') {
             const geoConfig = {
                 map: mapName,
                 center: center,
                 zoom: zoom,
                 roam: true,
-                itemStyle: {
-                    areaColor: '#e0f3f8',
-                    borderColor: '#ffffff',
-                    borderWidth: 1,
-                    shadowBlur: 4,
-                    shadowColor: 'rgba(0,0,0,0.08)'
-                },
-                label: {
-                    show: true,
-                    fontSize: 10,
-                    color: '#333',
-                    fontWeight: '500'
-                },
-                emphasis: {
-                    label: { color: '#000', fontWeight: 'bold', fontSize: 12 },
-                    itemStyle: { areaColor: '#f0c040' }
-                },
+                itemStyle: { areaColor: '#e0f3f8', borderColor: '#ffffff', borderWidth: 1, shadowBlur: 4, shadowColor: 'rgba(0,0,0,0.08)' },
+                label: { show: true, fontSize: 10, color: '#333', fontWeight: '500' },
+                emphasis: { label: { color: '#000', fontWeight: 'bold', fontSize: 12 }, itemStyle: { areaColor: '#f0c040' } },
                 zlevel: 0
             };
 
@@ -406,16 +269,8 @@
                 type: 'map',
                 geoIndex: 0,
                 data: data,
-                itemStyle: {
-                    borderColor: '#ffffff',
-                    borderWidth: 1,
-                    shadowBlur: 3,
-                    shadowColor: 'rgba(0,0,0,0.06)'
-                },
-                emphasis: {
-                    label: { color: '#000', fontWeight: 'bold' },
-                    itemStyle: { areaColor: '#f0c040' }
-                },
+                itemStyle: { borderColor: '#ffffff', borderWidth: 1, shadowBlur: 3, shadowColor: 'rgba(0,0,0,0.06)' },
+                emphasis: { label: { color: '#000', fontWeight: 'bold' }, itemStyle: { areaColor: '#f0c040' } },
                 zlevel: 1
             };
 
@@ -475,16 +330,8 @@
                     },
                     emphasis: {
                         scale: 1.8,
-                        label: {
-                            show: true,
-                            fontWeight: 'bold',
-                            fontSize: 14,
-                            color: '#000'
-                        },
-                        itemStyle: {
-                            shadowBlur: 16,
-                            shadowColor: 'rgba(0,0,0,0.6)'
-                        }
+                        label: { show: true, fontWeight: 'bold', fontSize: 14, color: '#000' },
+                        itemStyle: { shadowBlur: 16, shadowColor: 'rgba(0,0,0,0.6)' }
                     }
                 });
             }
@@ -574,11 +421,7 @@
             }
             myChart = echarts.init(document.getElementById('map-container'));
 
-            let data = [],
-                tooltipData = {},
-                visualMax = 10,
-                scatterData = [],
-                showScatter = false;
+            let data = [], tooltipData = {}, visualMax = 10, scatterData = [], showScatter = false;
             let view = 'china';
 
             if (mapName === 'china') {
@@ -627,53 +470,42 @@
             });
 
             myChart.off('click');
-           myChart.on('click', function(params) {
-    if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
-        let provinceName = params.name;
-        let adcode = provinceAdcodeMap[provinceName];
+            myChart.on('click', function(params) {
+                if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
+                    let provinceName = params.name;
+                    let adcode = provinceAdcodeMap[provinceName];
 
-        // 如果直接查找失败，尝试多种匹配方式
-        if (!adcode) {
-            // 1. 去除常见后缀（省、市、自治区等）
-            const suffixes = ['省', '市', '自治区', '特别行政区', '壮族自治区', '回族自治区', '维吾尔自治区'];
-            let shortName = provinceName;
-            for (let suffix of suffixes) {
-                if (provinceName.endsWith(suffix)) {
-                    shortName = provinceName.slice(0, -suffix.length);
-                    break;
-                }
-            }
-            // 2. 用短名称尝试匹配（包括包含关系）
-            for (let key in provinceAdcodeMap) {
-                if (key === provinceName || key === shortName || key.includes(shortName) || shortName.includes(key)) {
-                    adcode = provinceAdcodeMap[key];
-                    break;
-                }
-            }
-            // 3. 如果还找不到，尝试组合全称（如“内蒙古” → “内蒙古自治区”）
-            if (!adcode) {
-                const possibleFull = [provinceName + '省', provinceName + '市', provinceName + '自治区'];
-                for (let full of possibleFull) {
-                    if (provinceAdcodeMap[full]) {
-                        adcode = provinceAdcodeMap[full];
-                        break;
+                    // 如果直接查找失败，尝试去除常见后缀（针对 GeoJSON 使用简称的情况）
+                    if (!adcode) {
+                        const suffixes = ['省', '市', '自治区', '特别行政区', '壮族自治区', '回族自治区', '维吾尔自治区'];
+                        let shortName = provinceName;
+                        for (let suffix of suffixes) {
+                            if (provinceName.endsWith(suffix)) {
+                                shortName = provinceName.slice(0, -suffix.length);
+                                break;
+                            }
+                        }
+                        // 用短名称尝试匹配（包括包含关系）
+                        for (let key in provinceAdcodeMap) {
+                            if (key === provinceName || key === shortName || key.includes(shortName) || shortName.includes(key)) {
+                                adcode = provinceAdcodeMap[key];
+                                break;
+                            }
+                        }
+                        // 特殊处理“内蒙古” → “内蒙古自治区”
+                        if (!adcode && provinceName === '内蒙古') {
+                            adcode = provinceAdcodeMap['内蒙古自治区'];
+                        }
+                    }
+
+                    if (adcode) {
+                        drillDown(adcode, provinceName);
+                    } else {
+                        console.warn('未找到省份adcode:', provinceName);
+                        console.log('当前可用的省份名称列表：', Object.keys(provinceAdcodeMap));
                     }
                 }
-            }
-            // 4. 特殊处理“内蒙古” → “内蒙古自治区”
-            if (!adcode && provinceName === '内蒙古') {
-                adcode = provinceAdcodeMap['内蒙古自治区'];
-            }
-        }
-
-        if (adcode) {
-            drillDown(adcode, provinceName);
-        } else {
-            console.warn('未找到省份adcode:', provinceName);
-            console.log('当前可用的省份名称列表：', Object.keys(provinceAdcodeMap));
-        }
-    }
-});
+            });
 
             const resizeHandler = () => { if (myChart) myChart.resize(); };
             window.removeEventListener('resize', resizeHandler);
@@ -694,16 +526,12 @@
                 const geoJson = await response.json();
                 echarts.registerMap('province', geoJson);
 
-                let center = [105, 35],
-                    zoom = 1.2;
+                let center = [105, 35], zoom = 1.2;
                 if (geoJson.features && geoJson.features.length > 0) {
                     const coords = geoJson.features[0].geometry.coordinates;
-                    let lats = [],
-                        lngs = [];
-
+                    let lats = [], lngs = [];
                     function extractCoords(arr) {
-                        if (typeof arr[0] === 'number') { lngs.push(arr[0]);
-                            lats.push(arr[1]); } else arr.forEach(item => extractCoords(item));
+                        if (typeof arr[0] === 'number') { lngs.push(arr[0]); lats.push(arr[1]); } else arr.forEach(item => extractCoords(item));
                     }
                     extractCoords(coords);
                     if (lats.length > 0 && lngs.length > 0) {
@@ -742,13 +570,12 @@
             console.log('↩️ 返回全国视图');
         }
 
-        // ===================== ★ 加载高校数据 + 全国地图 ★ =====================
+        // ===================== 加载高校数据 + 全国地图 =====================
         async function loadUniversityData() {
             try {
                 const response = await fetch('universities.json');
                 if (!response.ok) throw new Error('无法加载 universities.json');
                 const data = await response.json();
-                // 确保字段正确
                 universityLocations = data.map(item => ({
                     name: item.name || '',
                     province: item.province || '',
@@ -759,8 +586,7 @@
                 console.log(`✅ 成功加载 ${universityLocations.length} 条高校坐标数据`);
             } catch (error) {
                 console.error('加载高校数据失败：', error);
-                universityLocations = []; // 空数组，避免崩溃
-                // 可在此提示用户
+                universityLocations = [];
             }
         }
 
@@ -774,6 +600,7 @@
                 if (!response.ok) throw new Error('网络请求失败');
                 const geoJson = await response.json();
                 nationalGeoJSON = geoJson;
+                // ★ 使用修改后的 extractProvinceAdcode ★
                 provinceAdcodeMap = extractProvinceAdcode(geoJson);
                 echarts.registerMap('china', geoJson);
 
