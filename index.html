@@ -2,27 +2,24 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="referrer" content="no-referrer" />  <!-- 添加此行，避免403 -->
+    <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>中国高校分布地图 - 悬停显示三经费折线（外部JSON）</title>
+    <title>中国高校分布地图 - 悬停三经费折线（外部JSON）</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js">
     </script>
     <style>
-        /* 样式保持不变，此处省略（您已有完整样式） */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { background:#f5f9fc; font-family:system-ui, sans-serif; }
         #map-container { width:100vw; height:100vh; position:relative; background:#f5f9fc; }
         #loading { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:18px; color:#555; background:#fff; padding:20px 40px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.1); z-index:10; }
         .map-controls { position:fixed; bottom:30px; right:30px; display:flex; flex-direction:column; gap:10px; z-index:20; }
-        .map-controls button { width:44px; height:44px; border:none; border-radius:50%; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:20px; font-weight:bold; color:#333; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; user-select:none; }
+        .map-controls button { width:44px; height:44px; border:none; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:20px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; user-select:none; }
         .map-controls button:hover { background:#f0f0f0; transform:scale(1.05); }
         .map-controls button:active { transform:scale(0.95); }
-        .map-controls button .icon { line-height:1; }
-        .map-controls button.fullscreen .icon { font-size:18px; }
-        #btn-back { position:fixed; top:20px; left:20px; z-index:20; padding:10px 18px; background:rgba(255,255,255,0.9); border:none; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:16px; font-weight:bold; color:#333; cursor:pointer; display:none; transition:all 0.2s; }
-        #btn-back:hover { background:#ffffff; transform:scale(1.02); }
+        #btn-back { position:fixed; top:20px; left:20px; z-index:20; padding:10px 18px; background:rgba(255,255,255,0.9); border:none; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); font-size:16px; font-weight:bold; color:#333; cursor:pointer; display:none; }
+        #btn-back:hover { background:#fff; transform:scale(1.02); }
         @media (max-width:600px) { .map-controls { bottom:20px; right:20px; gap:8px; } .map-controls button { width:40px; height:40px; font-size:18px; } #btn-back { top:10px; left:10px; padding:8px 14px; font-size:14px; } }
-        ::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; } ::-webkit-scrollbar-thumb { background:#c1c1c1; border-radius:3px; } ::-webkit-scrollbar-thumb:hover { background:#a8a8a8; }
+        ::-webkit-scrollbar { width:6px; height:6px; } ::-webkit-scrollbar-track { background:#f1f1f1; border-radius:3px; } ::-webkit-scrollbar-thumb { background:#c1c1c1; border-radius:3px; }
     </style>
 </head>
 <body>
@@ -37,7 +34,7 @@
     </div>
 
     <script>
-        // ===================== 省份/城市数据（保持全称，与 fullname 一致） =====================
+        // ===================== 省份/城市数据（全称） =====================
         const provinceUniversityData = {
             '北京市': ['清华大学', '北京大学', '中国人民大学', '北京航空航天大学', '北京师范大学'],
             '上海市': ['复旦大学', '上海交通大学', '同济大学', '华东师范大学'],
@@ -88,267 +85,188 @@
 
         // ===================== 三种经费模拟数据 =====================
         const provinceFunding = {};
-
         function seededRandom(seed) {
-            return function() {
-                seed = (seed * 9301 + 49297) % 233280;
-                return seed / 233280;
-            };
+            return function() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
         }
         const rand = seededRandom(12345);
-
         for (const province in provinceUniversityData) {
             let totalBase = 50 + rand() * 100;
-            const years = [2021, 2022, 2023, 2024, 2025];
             const research = [], teaching = [], other = [];
-            years.forEach((_, i) => {
+            [2021,2022,2023,2024,2025].forEach((_, i) => {
                 if (i === 0) {
-                    const r = Math.round(totalBase * (0.40 + rand() * 0.20));
-                    const t = Math.round(totalBase * (0.25 + rand() * 0.10));
+                    const r = Math.round(totalBase * (0.40 + rand()*0.20));
+                    const t = Math.round(totalBase * (0.25 + rand()*0.10));
                     const o = Math.round(totalBase - r - t);
                     research.push(r); teaching.push(t); other.push(o);
                 } else {
-                    const growth = 1 + (0.05 + rand() * 0.18);
-                    totalBase = totalBase * growth;
-                    const r = Math.round(totalBase * (0.40 + rand() * 0.20));
-                    const t = Math.round(totalBase * (0.25 + rand() * 0.10));
+                    const growth = 1 + (0.05 + rand()*0.18);
+                    totalBase *= growth;
+                    const r = Math.round(totalBase * (0.40 + rand()*0.20));
+                    const t = Math.round(totalBase * (0.25 + rand()*0.10));
                     const o = Math.round(totalBase - r - t);
                     research.push(r); teaching.push(t); other.push(o);
                 }
             });
             provinceFunding[province] = { research, teaching, other };
         }
-
         const fixData = {
-            '北京市': { research: [180, 195, 215, 240, 270], teaching: [120, 130, 145, 160, 180], other: [80, 90, 100, 110, 125] },
-            '上海市': { research: [150, 165, 182, 200, 225], teaching: [100, 110, 120, 135, 150], other: [60, 68, 75, 85, 95] },
-            '广东省': { research: [120, 135, 155, 175, 200], teaching: [80, 90, 102, 115, 130], other: [50, 58, 65, 75, 85] },
-            '江苏省': { research: [110, 125, 145, 165, 190], teaching: [75, 85, 98, 110, 125], other: [45, 52, 60, 68, 78] },
-            '浙江省': { research: [90, 100, 115, 130, 150], teaching: [60, 68, 78, 88, 100], other: [35, 40, 46, 52, 60] },
-            '湖北省': { research: [85, 95, 108, 125, 140], teaching: [55, 62, 72, 82, 92], other: [30, 35, 40, 48, 55] },
-            '四川省': { research: [75, 85, 98, 112, 130], teaching: [50, 58, 66, 76, 86], other: [28, 32, 38, 44, 50] },
-            '陕西省': { research: [70, 80, 92, 105, 120], teaching: [45, 52, 60, 68, 78], other: [25, 28, 34, 40, 46] },
-            '湖南省': { research: [65, 75, 86, 100, 115], teaching: [42, 48, 56, 64, 74], other: [22, 26, 30, 36, 42] },
-            '山东省': { research: [95, 108, 122, 140, 160], teaching: [65, 74, 84, 96, 108], other: [38, 44, 50, 58, 66] },
+            '北京市': { research: [180,195,215,240,270], teaching: [120,130,145,160,180], other: [80,90,100,110,125] },
+            '上海市': { research: [150,165,182,200,225], teaching: [100,110,120,135,150], other: [60,68,75,85,95] },
+            '广东省': { research: [120,135,155,175,200], teaching: [80,90,102,115,130], other: [50,58,65,75,85] },
+            '江苏省': { research: [110,125,145,165,190], teaching: [75,85,98,110,125], other: [45,52,60,68,78] },
+            '浙江省': { research: [90,100,115,130,150], teaching: [60,68,78,88,100], other: [35,40,46,52,60] },
+            '湖北省': { research: [85,95,108,125,140], teaching: [55,62,72,82,92], other: [30,35,40,48,55] },
+            '四川省': { research: [75,85,98,112,130], teaching: [50,58,66,76,86], other: [28,32,38,44,50] },
+            '陕西省': { research: [70,80,92,105,120], teaching: [45,52,60,68,78], other: [25,28,34,40,46] },
+            '湖南省': { research: [65,75,86,100,115], teaching: [42,48,56,64,74], other: [22,26,30,36,42] },
+            '山东省': { research: [95,108,122,140,160], teaching: [65,74,84,96,108], other: [38,44,50,58,66] },
         };
-        for (const p in fixData) {
-            if (provinceFunding[p]) {
-                provinceFunding[p] = fixData[p];
-            }
-        }
+        for (const p in fixData) if (provinceFunding[p]) provinceFunding[p] = fixData[p];
 
         // ===================== 核心逻辑 =====================
-        let myChart = null;
-        let currentZoom = 1;
-        let currentCenter = [105, 35];
-        let currentView = 'china';
-        let currentProvince = null;
-        let provinceAdcodeMap = {};
+        let myChart = null, currentZoom = 1, currentCenter = [105,35], currentView = 'china', currentProvince = null;
+        let provinceAdcodeMap = {};      // 键：全称（如“北京市”），值：adcode
+        let shortToFullMap = {};         // 键：简称（如“北京”），值：全称（“北京市”）
         let nationalGeoJSON = null;
-        const defaultCenter = [105, 35];
+        const defaultCenter = [105,35];
         const geoUrl = 'https://geojson.cn/api/data/china.json';
 
-        // ★ 关键修改：提取 fullname 和 code (而非 name 和 adcode) ★
+        // ★ 提取全称和 code，并构建简称→全称映射 ★
         function extractProvinceAdcode(geoJson) {
             const map = {};
+            const shortFull = {};
             geoJson.features.forEach(feature => {
-                const name = feature.properties.fullname;   // 全称（如“北京市”）
-                const adcode = feature.properties.code;      // 该数据源用 code 存储 adcode
-                if (name && adcode) map[name] = adcode;
+                const full = feature.properties.fullname;
+                const short = feature.properties.name;
+                const code = feature.properties.code;
+                if (full && code) {
+                    map[full] = code;
+                    if (short) shortFull[short] = full;
+                }
             });
-            console.log('提取到的省份adcode映射：', map);
+            provinceAdcodeMap = map;
+            shortToFullMap = shortFull;
+            console.log('✅ 省份映射（全称→adcode）：', map);
+            console.log('✅ 简称→全称映射：', shortFull);
             return map;
         }
 
-        // ===================== 生成三条折线 SVG（保持不变） =====================
-        function buildFundingSVG(provinceName, data) {
-            if (!data || !data.research || !data.teaching || !data.other) {
-                return '<div>暂无数据</div>';
-            }
-            const years = ['2021', '2022', '2023', '2024', '2025'];
-            const allVals = [...data.research, ...data.teaching, ...data.other];
-            const maxVal = Math.max(...allVals) * 1.2;
-            const minVal = Math.min(...allVals) * 0.8;
-            const range = maxVal - minVal || 1;
-            const svgWidth = 380, svgHeight = 200;
-            const padding = { top: 30, bottom: 30, left: 45, right: 20 };
-            const plotWidth = svgWidth - padding.left - padding.right;
-            const plotHeight = svgHeight - padding.top - padding.bottom;
-
-            function calcPoints(arr) {
-                return arr.map((val, idx) => {
-                    const x = padding.left + (idx / (arr.length - 1)) * plotWidth;
-                    const y = padding.top + plotHeight - ((val - minVal) / range) * plotHeight;
-                    return { x, y, val };
-                });
-            }
-            const researchPoints = calcPoints(data.research);
-            const teachingPoints = calcPoints(data.teaching);
-            const otherPoints = calcPoints(data.other);
-
-            function pointsStr(pts) { return pts.map(p => `${p.x},${p.y}`).join(' '); }
-            function calcLength(pts) {
-                let len = 0;
-                for (let i = 1; i < pts.length; i++) {
-                    const dx = pts[i].x - pts[i - 1].x;
-                    const dy = pts[i].y - pts[i - 1].y;
-                    len += Math.sqrt(dx * dx + dy * dy);
+        // ★ 辅助函数：将简称转换为全称 ★
+        function getFullName(shortName) {
+            if (shortToFullMap[shortName]) return shortToFullMap[shortName];
+            // 尝试去除常见后缀再查
+            const suffixes = ['省', '市', '自治区', '特别行政区', '壮族自治区', '回族自治区', '维吾尔自治区'];
+            let base = shortName;
+            for (let s of suffixes) {
+                if (shortName.endsWith(s)) {
+                    base = shortName.slice(0, -s.length);
+                    break;
                 }
-                return len;
             }
-            const rLen = calcLength(researchPoints);
-            const tLen = calcLength(teachingPoints);
-            const oLen = calcLength(otherPoints);
-
-            function polylineWithAnimate(pts, color, width, dashLen) {
-                const ptsStr = pointsStr(pts);
-                return `<polyline points="${ptsStr}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${dashLen}">
-                            <animate attributeName="stroke-dashoffset" from="${dashLen}" to="0" dur="1.2s" fill="freeze" />
-                        </polyline>`;
+            // 用 base 去匹配全称（包含关系）
+            for (let full in provinceAdcodeMap) {
+                if (full === shortName || full === base || full.includes(base) || base.includes(full)) {
+                    return full;
+                }
             }
-
-            function drawLabels(pts, offsetY, color) {
-                let html = '';
-                pts.forEach((p, i) => {
-                    html += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;
-                    html += `<text x="${p.x}" y="${p.y + offsetY}" text-anchor="middle" font-size="10" fill="${color}" font-weight="600">${p.val}</text>`;
-                });
-                return html;
-            }
-
-            let yearLabels = '';
-            researchPoints.forEach((p, i) => {
-                yearLabels += `<text x="${p.x}" y="${svgHeight - 6}" text-anchor="middle" font-size="10" fill="#666">${years[i]}</text>`;
-            });
-
-            const legendHtml = `
-                <text x="${padding.left}" y="16" font-size="11" fill="#d14a61">● 科研</text>
-                <text x="${padding.left + 70}" y="16" font-size="11" fill="#2d7fc1">● 教学</text>
-                <text x="${padding.left + 140}" y="16" font-size="11" fill="#3a9b5e">● 其他</text>
-            `;
-            const title = `${provinceName} · 高校经费 (亿元)`;
-
-            const svg = `
-                <svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;border-radius:6px;">
-                    <rect width="100%" height="100%" fill="rgba(255,255,255,0.95)" rx="6"/>
-                    <text x="${svgWidth/2}" y="16" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1a1a">${title}</text>
-                    ${legendHtml}
-                    ${[0.2,0.4,0.6,0.8].map(r => {
-                        const y = padding.top + plotHeight * (1 - r);
-                        const val = Math.round(minVal + range * r);
-                        return `<line x1="${padding.left}" y1="${y}" x2="${svgWidth-padding.right}" y2="${y}" stroke="#e0e0e0" stroke-width="0.5"/>
-                                <text x="${padding.left-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#999">${val}</text>`;
-                    }).join('')}
-                    ${polylineWithAnimate(researchPoints, '#d14a61', 2.8, rLen)}
-                    ${polylineWithAnimate(teachingPoints, '#2d7fc1', 2.8, tLen)}
-                    ${polylineWithAnimate(otherPoints, '#3a9b5e', 2.8, oLen)}
-                    ${drawLabels(researchPoints, -10, '#d14a61')}
-                    ${drawLabels(teachingPoints, -10, '#2d7fc1')}
-                    ${drawLabels(otherPoints, -10, '#3a9b5e')}
-                    ${yearLabels}
-                </svg>
-            `;
-            return svg;
+            // 特殊处理“内蒙古”
+            if (shortName === '内蒙古') return '内蒙古自治区';
+            return null;
         }
 
-        // ===================== getOption（保持不变） =====================
-        function getOption(mapName, data, center, zoom, tooltipData, visualMax, scatterData = [], showScatter = true, view = 'china') {
-            const geoConfig = {
-                map: mapName,
-                center: center,
-                zoom: zoom,
-                roam: true,
-                itemStyle: { areaColor: '#e0f3f8', borderColor: '#ffffff', borderWidth: 1, shadowBlur: 4, shadowColor: 'rgba(0,0,0,0.08)' },
-                label: { show: true, fontSize: 10, color: '#333', fontWeight: '500' },
-                emphasis: { label: { color: '#000', fontWeight: 'bold', fontSize: 12 }, itemStyle: { areaColor: '#f0c040' } },
-                zlevel: 0
-            };
+        // ===================== 生成三条折线 SVG（不变） =====================
+        function buildFundingSVG(provinceName, data) {
+            if (!data || !data.research || !data.teaching || !data.other) return '<div>暂无数据</div>';
+            const years = ['2021','2022','2023','2024','2025'];
+            const allVals = [...data.research, ...data.teaching, ...data.other];
+            const maxVal = Math.max(...allVals) * 1.2, minVal = Math.min(...allVals) * 0.8, range = maxVal - minVal || 1;
+            const svgW = 380, svgH = 200, pad = {top:30, bottom:30, left:45, right:20};
+            const plotW = svgW - pad.left - pad.right, plotH = svgH - pad.top - pad.bottom;
+            const calcPts = arr => arr.map((v,i) => ({ x: pad.left + (i/(arr.length-1))*plotW, y: pad.top + plotH - ((v-minVal)/range)*plotH, val: v }));
+            const rP = calcPts(data.research), tP = calcPts(data.teaching), oP = calcPts(data.other);
+            const ptsStr = pts => pts.map(p => `${p.x},${p.y}`).join(' ');
+            const calcLen = pts => { let l=0; for (let i=1;i<pts.length;i++) { const dx=pts[i].x-pts[i-1].x, dy=pts[i].y-pts[i-1].y; l+=Math.sqrt(dx*dx+dy*dy); } return l; };
+            const rLen = calcLen(rP), tLen = calcLen(tP), oLen = calcLen(oP);
+            const polyWithAnimate = (pts,color,width,dashLen) =>
+                `<polyline points="${ptsStr(pts)}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${dashLen}">
+                    <animate attributeName="stroke-dashoffset" from="${dashLen}" to="0" dur="1.2s" fill="freeze" />
+                </polyline>`;
+            const drawLabels = (pts, offY, color) => pts.map((p,i) =>
+                `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+                 <text x="${p.x}" y="${p.y+offY}" text-anchor="middle" font-size="10" fill="${color}" font-weight="600">${p.val}</text>`
+            ).join('');
+            let yearLabels = rP.map((p,i) => `<text x="${p.x}" y="${svgH-6}" text-anchor="middle" font-size="10" fill="#666">${years[i]}</text>`).join('');
+            const legend = `<text x="${pad.left}" y="16" font-size="11" fill="#d14a61">● 科研</text>
+                            <text x="${pad.left+70}" y="16" font-size="11" fill="#2d7fc1">● 教学</text>
+                            <text x="${pad.left+140}" y="16" font-size="11" fill="#3a9b5e">● 其他</text>`;
+            const grid = [0.2,0.4,0.6,0.8].map(r => {
+                const y = pad.top + plotH * (1-r);
+                const val = Math.round(minVal + range * r);
+                return `<line x1="${pad.left}" y1="${y}" x2="${svgW-pad.right}" y2="${y}" stroke="#e0e0e0" stroke-width="0.5"/>
+                        <text x="${pad.left-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#999">${val}</text>`;
+            }).join('');
+            return `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto;border-radius:6px;">
+                        <rect width="100%" height="100%" fill="rgba(255,255,255,0.95)" rx="6"/>
+                        <text x="${svgW/2}" y="16" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a1a1a">${provinceName} · 高校经费 (亿元)</text>
+                        ${legend} ${grid}
+                        ${polyWithAnimate(rP,'#d14a61',2.8,rLen)}
+                        ${polyWithAnimate(tP,'#2d7fc1',2.8,tLen)}
+                        ${polyWithAnimate(oP,'#3a9b5e',2.8,oLen)}
+                        ${drawLabels(rP,-10,'#d14a61')}
+                        ${drawLabels(tP,-10,'#2d7fc1')}
+                        ${drawLabels(oP,-10,'#3a9b5e')}
+                        ${yearLabels}
+                    </svg>`;
+        }
 
+        // ===================== getOption（修改 tooltip） =====================
+        function getOption(mapName, data, center, zoom, tooltipData, visualMax, scatterData, showScatter, view) {
+            const geo = {
+                map: mapName, center, zoom, roam: true,
+                itemStyle: { areaColor:'#e0f3f8', borderColor:'#fff', borderWidth:1, shadowBlur:4, shadowColor:'rgba(0,0,0,0.08)' },
+                label: { show:true, fontSize:10, color:'#333', fontWeight:'500' },
+                emphasis: { label:{color:'#000',fontWeight:'bold',fontSize:12}, itemStyle:{areaColor:'#f0c040'} },
+                zlevel:0
+            };
             const mapSeries = {
-                name: '高校数量',
-                type: 'map',
-                geoIndex: 0,
-                data: data,
-                itemStyle: { borderColor: '#ffffff', borderWidth: 1, shadowBlur: 3, shadowColor: 'rgba(0,0,0,0.06)' },
-                emphasis: { label: { color: '#000', fontWeight: 'bold' }, itemStyle: { areaColor: '#f0c040' } },
-                zlevel: 1
+                name:'高校数量', type:'map', geoIndex:0, data,
+                itemStyle:{ borderColor:'#fff', borderWidth:1, shadowBlur:3, shadowColor:'rgba(0,0,0,0.06)' },
+                emphasis:{ label:{color:'#000',fontWeight:'bold'}, itemStyle:{areaColor:'#f0c040'} }, zlevel:1
             };
-
             const series = [mapSeries];
-
             if (showScatter) {
-                const scatterPoints = [];
-                scatterData.forEach(item => {
-                    scatterPoints.push({
-                        name: item.name,
-                        value: [item.lng, item.lat, item.name],
-                        province: item.province,
-                        city: item.city
-                    });
-                });
-                if (scatterPoints.length === 0) {
-                    scatterPoints.push({
-                        name: '📌 暂无高校数据',
-                        value: [center[0] + 0.3, center[1] + 0.3, '📌 暂无高校数据'],
-                        isPlaceholder: true
-                    });
-                }
+                const pts = scatterData.map(item => ({ name:item.name, value:[item.lng,item.lat,item.name], province:item.province, city:item.city }));
+                if (pts.length === 0) pts.push({ name:'📌 暂无高校数据', value:[center[0]+0.3, center[1]+0.3, '📌 暂无高校数据'], isPlaceholder:true });
                 series.push({
-                    name: '高校位置',
-                    type: 'scatter',
-                    coordinateSystem: 'geo',
-                    geoIndex: 0,
-                    data: scatterPoints,
-                    symbolSize: function(val, params) {
-                        if (params.data.isPlaceholder) return 8;
-                        return 18;
+                    name:'高校位置', type:'scatter', coordinateSystem:'geo', geoIndex:0, data:pts,
+                    symbolSize:(v,p) => p.data.isPlaceholder ? 8 : 18,
+                    symbol:'circle', zlevel:10,
+                    itemStyle:{
+                        color:p => p.data.isPlaceholder ? 'rgba(200,200,200,0.3)' : '#d14a61',
+                        shadowBlur:8, shadowColor:'rgba(0,0,0,0.35)', borderColor:'#fff', borderWidth:2
                     },
-                    symbol: 'circle',
-                    zlevel: 10,
-                    itemStyle: {
-                        color: function(param) {
-                            if (param.data.isPlaceholder) return 'rgba(200,200,200,0.3)';
-                            return '#d14a61';
-                        },
-                        shadowBlur: 8,
-                        shadowColor: 'rgba(0,0,0,0.35)',
-                        borderColor: '#ffffff',
-                        borderWidth: 2
+                    label:{
+                        show:true, position:'right', fontSize:11, color:'#222', fontWeight:'600',
+                        textShadowBlur:2, textShadowColor:'rgba(255,255,255,0.8)',
+                        formatter:p => p.data.isPlaceholder ? '' : p.data.name
                     },
-                    label: {
-                        show: true,
-                        position: 'right',
-                        fontSize: 11,
-                        color: '#222',
-                        fontWeight: '600',
-                        textShadowBlur: 2,
-                        textShadowColor: 'rgba(255,255,255,0.8)',
-                        formatter: function(params) {
-                            if (params.data.isPlaceholder) return '';
-                            return params.data.name;
-                        }
-                    },
-                    emphasis: {
-                        scale: 1.8,
-                        label: { show: true, fontWeight: 'bold', fontSize: 14, color: '#000' },
-                        itemStyle: { shadowBlur: 16, shadowColor: 'rgba(0,0,0,0.6)' }
-                    }
+                    emphasis:{ scale:1.8, label:{show:true,fontWeight:'bold',fontSize:14,color:'#000'}, itemStyle:{shadowBlur:16,shadowColor:'rgba(0,0,0,0.6)'} }
                 });
             }
-
             const tooltip = {
-                trigger: 'item',
-                backgroundColor: 'rgba(255,255,255,0.96)',
-                borderColor: '#ddd',
-                borderWidth: 1,
-                textStyle: { fontSize: 13, lineHeight: 24 },
-                extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.12); border-radius: 8px; padding: 8px;'
+                trigger:'item',
+                backgroundColor:'rgba(255,255,255,0.96)',
+                borderColor:'#ddd', borderWidth:1,
+                textStyle:{ fontSize:13, lineHeight:24 },
+                extraCssText:'box-shadow:0 4px 16px rgba(0,0,0,0.12); border-radius:8px; padding:8px;'
             };
-
             if (view === 'china') {
                 tooltip.formatter = function(params) {
                     if (params.seriesType === 'map') {
-                        const province = params.name;
+                        let province = params.name; // 可能是简称
+                        // ★ 转换为全称 ★
+                        const fullName = getFullName(province);
+                        if (fullName) province = fullName;
                         const funding = provinceFunding[province];
                         if (funding) {
                             return buildFundingSVG(province, funding);
@@ -372,147 +290,90 @@
                     }
                     const name = params.name;
                     const list = tooltipData[name];
-                    if (!list || list.length === 0) {
-                        return `<b>${name}</b><br/>暂无高校数据`;
-                    }
+                    if (!list || list.length === 0) return `<b>${name}</b><br/>暂无高校数据`;
                     let html = `<b>${name}</b><br/>🏫 高校列表：<br/>`;
                     list.forEach(u => { html += `• ${u}<br/>`; });
                     return html;
                 };
             }
-
             return {
-                backgroundColor: '#f5f9fc',
-                tooltip: tooltip,
-                visualMap: {
-                    min: 0,
-                    max: visualMax,
-                    left: 'left',
-                    bottom: '30',
-                    text: ['高校数量多', '高校数量少'],
-                    textStyle: { fontSize: 12, color: '#555' },
-                    inRange: { color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'] },
-                    calculable: true,
-                    zlevel: 0
+                backgroundColor:'#f5f9fc', tooltip,
+                visualMap:{
+                    min:0, max:visualMax, left:'left', bottom:'30',
+                    text:['高校数量多','高校数量少'], textStyle:{ fontSize:12, color:'#555' },
+                    inRange:{ color:['#e0f3f8','#abd9e9','#74add1','#4575b4','#313695'] },
+                    calculable:true, zlevel:0
                 },
-                series: series,
-                geo: geoConfig
+                series, geo
             };
         }
 
         // ===================== 更新视图 =====================
         function updateMapView(center, zoom) {
             if (!myChart) return;
-            const option = myChart.getOption();
-            if (option.geo) {
-                option.geo.center = center;
-                option.geo.zoom = zoom;
-                myChart.setOption(option);
-                currentCenter = center;
-                currentZoom = zoom;
-            }
+            const opt = myChart.getOption();
+            if (opt.geo) { opt.geo.center = center; opt.geo.zoom = zoom; myChart.setOption(opt); currentCenter = center; currentZoom = zoom; }
         }
 
         // ===================== 初始化图表 =====================
         function initChart(mapName, center, zoom) {
-            if (myChart) {
-                myChart.dispose();
-                myChart = null;
-            }
+            if (myChart) { myChart.dispose(); myChart = null; }
             myChart = echarts.init(document.getElementById('map-container'));
-
-            let data = [], tooltipData = {}, visualMax = 10, scatterData = [], showScatter = false;
-            let view = 'china';
-
+            let data = [], tooltipData = {}, visualMax = 10, scatterData = [], showScatter = false, view = 'china';
             if (mapName === 'china') {
-                for (const province in provinceUniversityData) {
-                    data.push({ name: province, value: provinceUniversityData[province].length });
-                }
+                for (const p in provinceUniversityData) data.push({ name:p, value:provinceUniversityData[p].length });
                 tooltipData = provinceUniversityData;
                 visualMax = 10;
-                scatterData = [];
                 showScatter = false;
                 view = 'china';
-                console.log('🌍 全国视图：悬停显示三条经费折线');
             } else {
-                const cityData = cityUniversityData[currentProvince] || {};
-                for (const city in cityData) {
-                    data.push({ name: city, value: cityData[city].length });
-                }
+                // ★ 将 currentProvince（简称）转为全称，用于过滤散点 ★
+                let fullProvince = currentProvince;
+                const full = getFullName(currentProvince);
+                if (full) fullProvince = full;
+                const cityData = cityUniversityData[fullProvince] || {};
+                for (const c in cityData) data.push({ name:c, value:cityData[c].length });
                 tooltipData = cityData;
-                let maxVal = 0;
-                for (const city in cityData) {
-                    if (cityData[city].length > maxVal) maxVal = cityData[city].length;
-                }
+                let maxVal = 0; for (const c in cityData) if (cityData[c].length > maxVal) maxVal = cityData[c].length;
                 visualMax = Math.max(maxVal, 1);
-                scatterData = universityLocations.filter(item => item.province === currentProvince);
+                scatterData = universityLocations.filter(item => item.province === fullProvince);
                 showScatter = true;
                 view = 'province';
-                console.log(`🔍 省份 "${currentProvince}"：${scatterData.length} 个高校散点`);
+                console.log(`🔍 省份 "${fullProvince}"：${scatterData.length} 个高校散点`);
             }
-
             const option = getOption(mapName, data, center, zoom, tooltipData, visualMax, scatterData, showScatter, view);
             myChart.setOption(option);
-
             myChart.off('georoam');
-            myChart.on('georoam', function(params) {
+            myChart.on('georoam', function() {
                 const opt = myChart.getOption();
                 if (opt.geo) {
-                    const newCenter = opt.geo.center;
-                    const newZoom = opt.geo.zoom;
-                    if (newCenter && Array.isArray(newCenter) && newCenter.length === 2) {
-                        currentCenter = newCenter;
-                    }
-                    if (newZoom !== undefined && newZoom !== null) {
-                        currentZoom = newZoom;
-                    }
+                    const nc = opt.geo.center, nz = opt.geo.zoom;
+                    if (nc && Array.isArray(nc) && nc.length === 2) currentCenter = nc;
+                    if (nz !== undefined && nz !== null) currentZoom = nz;
                 }
             });
-
             myChart.off('click');
             myChart.on('click', function(params) {
                 if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
-                    let provinceName = params.name;
+                    let provinceName = params.name; // 简称
+                    // 尝试直接查找 adcode（全称）
                     let adcode = provinceAdcodeMap[provinceName];
-
-                    // 如果直接查找失败，尝试去除常见后缀（针对 GeoJSON 使用简称的情况）
                     if (!adcode) {
-                        const suffixes = ['省', '市', '自治区', '特别行政区', '壮族自治区', '回族自治区', '维吾尔自治区'];
-                        let shortName = provinceName;
-                        for (let suffix of suffixes) {
-                            if (provinceName.endsWith(suffix)) {
-                                shortName = provinceName.slice(0, -suffix.length);
-                                break;
-                            }
-                        }
-                        // 用短名称尝试匹配（包括包含关系）
-                        for (let key in provinceAdcodeMap) {
-                            if (key === provinceName || key === shortName || key.includes(shortName) || shortName.includes(key)) {
-                                adcode = provinceAdcodeMap[key];
-                                break;
-                            }
-                        }
-                        // 特殊处理“内蒙古” → “内蒙古自治区”
-                        if (!adcode && provinceName === '内蒙古') {
-                            adcode = provinceAdcodeMap['内蒙古自治区'];
-                        }
+                        const full = getFullName(provinceName);
+                        if (full) adcode = provinceAdcodeMap[full];
                     }
-
                     if (adcode) {
-                        drillDown(adcode, provinceName);
+                        drillDown(adcode, provinceName); // 传简称用于显示
                     } else {
                         console.warn('未找到省份adcode:', provinceName);
-                        console.log('当前可用的省份名称列表：', Object.keys(provinceAdcodeMap));
+                        console.log('可用全称列表：', Object.keys(provinceAdcodeMap));
                     }
                 }
             });
-
             const resizeHandler = () => { if (myChart) myChart.resize(); };
             window.removeEventListener('resize', resizeHandler);
             window.addEventListener('resize', resizeHandler);
-
-            currentCenter = center;
-            currentZoom = zoom;
+            currentCenter = center; currentZoom = zoom;
         }
 
         // ===================== 下钻 =====================
@@ -525,52 +386,40 @@
                 if (!response.ok) throw new Error('省级数据加载失败');
                 const geoJson = await response.json();
                 echarts.registerMap('province', geoJson);
-
-                let center = [105, 35], zoom = 1.2;
+                let center = [105,35], zoom = 1.2;
                 if (geoJson.features && geoJson.features.length > 0) {
                     const coords = geoJson.features[0].geometry.coordinates;
-                    let lats = [], lngs = [];
-                    function extractCoords(arr) {
-                        if (typeof arr[0] === 'number') { lngs.push(arr[0]); lats.push(arr[1]); } else arr.forEach(item => extractCoords(item));
-                    }
-                    extractCoords(coords);
-                    if (lats.length > 0 && lngs.length > 0) {
-                        const latAvg = lats.reduce((a, b) => a + b, 0) / lats.length;
-                        const lngAvg = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-                        center = [lngAvg, latAvg];
+                    let lats=[], lngs=[];
+                    function extract(arr) { if (typeof arr[0] === 'number') { lngs.push(arr[0]); lats.push(arr[1]); } else arr.forEach(extract); }
+                    extract(coords);
+                    if (lats.length && lngs.length) {
+                        center = [lngs.reduce((a,b)=>a+b,0)/lngs.length, lats.reduce((a,b)=>a+b,0)/lats.length];
                         zoom = 1.2;
                     }
                 }
-
-                currentProvince = provinceName;
+                currentProvince = provinceName; // 存简称
                 currentView = 'province';
                 document.getElementById('btn-back').style.display = 'block';
                 initChart('province', center, zoom);
                 document.getElementById('loading').style.display = 'none';
                 console.log(`✅ 已切换到 ${provinceName} 地图`);
-            } catch (error) {
-                document.getElementById('loading').innerHTML =
-                    `❌ 加载省份地图失败：${error.message}<br>请检查网络或返回全国视图。`;
-                console.error('下钻失败:', error);
+            } catch (e) {
+                document.getElementById('loading').innerHTML = `❌ 加载省份地图失败：${e.message}<br>请检查网络或返回全国视图。`;
+                console.error(e);
             }
         }
 
         // ===================== 返回全国 =====================
         function backToChina() {
             if (currentView === 'china') return;
-            currentView = 'china';
-            currentProvince = null;
+            currentView = 'china'; currentProvince = null;
             document.getElementById('btn-back').style.display = 'none';
-            if (nationalGeoJSON) {
-                try { echarts.registerMap('china', nationalGeoJSON); } catch (e) { /* 忽略 */ }
-            }
+            if (nationalGeoJSON) try { echarts.registerMap('china', nationalGeoJSON); } catch(e) {}
             initChart('china', defaultCenter, 1);
-            currentZoom = 1;
-            currentCenter = defaultCenter;
-            console.log('↩️ 返回全国视图');
+            currentZoom = 1; currentCenter = defaultCenter;
         }
 
-        // ===================== 加载高校数据 + 全国地图 =====================
+        // ===================== 加载数据 =====================
         async function loadUniversityData() {
             try {
                 const response = await fetch('universities.json');
@@ -594,16 +443,13 @@
             try {
                 document.getElementById('loading').innerHTML = '⏳ 加载高校数据...';
                 await loadUniversityData();
-
                 document.getElementById('loading').innerHTML = '⏳ 加载地图数据...';
                 const response = await fetch(geoUrl);
                 if (!response.ok) throw new Error('网络请求失败');
                 const geoJson = await response.json();
                 nationalGeoJSON = geoJson;
-                // ★ 使用修改后的 extractProvinceAdcode ★
-                provinceAdcodeMap = extractProvinceAdcode(geoJson);
+                extractProvinceAdcode(geoJson);  // 填充 provinceAdcodeMap 和 shortToFullMap
                 echarts.registerMap('china', geoJson);
-
                 document.getElementById('loading').style.display = 'none';
                 initChart('china', defaultCenter, 1);
                 currentView = 'china';
@@ -611,46 +457,32 @@
                 document.getElementById('btn-back').style.display = 'none';
                 console.log('✅ 地图初始化完成');
             } catch (error) {
-                document.getElementById('loading').innerHTML =
-                    `❌ 加载失败：${error.message}<br>请检查网络或刷新页面重试。`;
+                document.getElementById('loading').innerHTML = `❌ 加载失败：${error.message}<br>请检查网络或刷新页面重试。`;
                 console.error('加载失败:', error);
             }
         }
 
         // ===================== 控制按钮 =====================
-        document.getElementById('btn-zoom-in').addEventListener('click', function() {
+        document.getElementById('btn-zoom-in').addEventListener('click', ()=>{
             if (!myChart) return;
-            const newZoom = Math.min(currentZoom + 0.15, 3.5);
-            updateMapView(currentCenter, newZoom);
+            updateMapView(currentCenter, Math.min(currentZoom+0.15, 3.5));
         });
-
-        document.getElementById('btn-zoom-out').addEventListener('click', function() {
+        document.getElementById('btn-zoom-out').addEventListener('click', ()=>{
             if (!myChart) return;
-            const newZoom = Math.max(currentZoom - 0.15, 0.4);
-            updateMapView(currentCenter, newZoom);
+            updateMapView(currentCenter, Math.max(currentZoom-0.15, 0.4));
         });
-
-        document.getElementById('btn-refresh').addEventListener('click', function() {
-            if (currentView === 'province') {
-                backToChina();
-            } else {
-                updateMapView(defaultCenter, 1);
-            }
+        document.getElementById('btn-refresh').addEventListener('click', ()=>{
+            if (currentView === 'province') backToChina();
+            else updateMapView(defaultCenter, 1);
         });
-
-        document.getElementById('btn-fullscreen').addEventListener('click', function() {
-            const container = document.getElementById('map-container');
-            if (!document.fullscreenElement) {
-                container.requestFullscreen().catch(err => console.warn(err));
-            } else {
-                document.exitFullscreen();
-            }
-            setTimeout(() => { if (myChart) myChart.resize(); }, 150);
+        document.getElementById('btn-fullscreen').addEventListener('click', ()=>{
+            const el = document.getElementById('map-container');
+            if (!document.fullscreenElement) el.requestFullscreen().catch(e=>console.warn(e));
+            else document.exitFullscreen();
+            setTimeout(()=>{ if (myChart) myChart.resize(); }, 150);
         });
-
         document.getElementById('btn-back').addEventListener('click', backToChina);
 
-        // ===================== 启动 =====================
         if (typeof echarts === 'undefined') {
             document.getElementById('loading').innerHTML = '⚠️ ECharts 库加载失败，请检查网络。';
         } else {
