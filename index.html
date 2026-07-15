@@ -253,27 +253,34 @@
             currentProvince = null;
         let provinceAdcodeMap = {};
         let shortToFullMap = {};
+        let fullToShortMap = {}; // ★ 新增：全称→简称映射
         let nationalGeoJSON = null;
         const defaultCenter = [105, 35];
         const geoUrl = 'https://geojson.cn/api/data/china.json';
 
-        // ★ 提取全称和 code，并构建简称→全称映射 ★
+        // ★ 提取全称、简称和 adcode，并构建双向映射 ★
         function extractProvinceAdcode(geoJson) {
             const map = {};
             const shortFull = {};
+            const fullShort = {};
             geoJson.features.forEach(feature => {
                 const full = feature.properties.fullname;
                 const short = feature.properties.name;
                 const code = feature.properties.code;
                 if (full && code) {
                     map[full] = code;
-                    if (short) shortFull[short] = full;
+                    if (short) {
+                        shortFull[short] = full;
+                        fullShort[full] = short;
+                    }
                 }
             });
             provinceAdcodeMap = map;
             shortToFullMap = shortFull;
+            fullToShortMap = fullShort;
             console.log('✅ 省份映射（全称→adcode）：', map);
             console.log('✅ 简称→全称映射：', shortFull);
+            console.log('✅ 全称→简称映射：', fullShort);
             return map;
         }
 
@@ -360,7 +367,7 @@
 
         // ===================== getOption（修复颜色映射） =====================
         function getOption(mapName, data, center, zoom, tooltipData, visualMax, scatterData, showScatter, view) {
-            // ★ 修复1：geo 中移除 areaColor，让 visualMap 控制颜色 ★
+            // geo 中不设置 areaColor，让 visualMap 控制
             const geo = {
                 map: mapName,
                 center,
@@ -371,7 +378,6 @@
                     borderWidth: 1,
                     shadowBlur: 4,
                     shadowColor: 'rgba(0,0,0,0.08)'
-                    // 不再设置 areaColor
                 },
                 label: { show: true, fontSize: 10, color: '#333', fontWeight: '500' },
                 emphasis: {
@@ -391,7 +397,6 @@
                     borderWidth: 1,
                     shadowBlur: 3,
                     shadowColor: 'rgba(0,0,0,0.06)'
-                    // 不设置 color，由 visualMap 控制
                 },
                 emphasis: {
                     label: { color: '#000', fontWeight: 'bold' },
@@ -454,7 +459,7 @@
             if (view === 'china') {
                 tooltip.formatter = function(params) {
                     if (params.seriesType === 'map') {
-                        let province = params.name;
+                        let province = params.name; // 简称
                         const fullName = getFullName(province);
                         if (fullName) province = fullName;
                         const funding = provinceFunding[province];
@@ -487,7 +492,7 @@
                 };
             }
 
-            // ★ 修复2：visualMap 添加 seriesIndex: [0] 仅作用于 map 系列 ★
+            // ★ 重点：visualMap 只作用于 map 系列（seriesIndex: [0]）
             return {
                 backgroundColor: '#f5f9fc',
                 tooltip: tooltip,
@@ -501,7 +506,7 @@
                     inRange: { color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'] },
                     calculable: true,
                     zlevel: 0,
-                    seriesIndex: [0] // ★ 只应用到第一个系列（map 系列）
+                    seriesIndex: [0] // 仅作用于地图系列
                 },
                 series: series,
                 geo: geo
@@ -533,18 +538,20 @@
                 view = 'china';
 
             if (mapName === 'china') {
-                // ★ 修复3：全国视图动态计算 visualMax ★
+                // ★ 使用简称作为 name，以匹配 GeoJSON ★
                 let maxVal = 0;
-                for (const p in provinceUniversityData) {
-                    const count = provinceUniversityData[p].length;
-                    data.push({ name: p, value: count });
+                for (const fullName in provinceUniversityData) {
+                    const shortName = fullToShortMap[fullName] || fullName; // 若没有简称则用原名
+                    const count = provinceUniversityData[fullName].length;
+                    data.push({ name: shortName, value: count });
                     if (count > maxVal) maxVal = count;
                 }
-                tooltipData = provinceUniversityData;
+                tooltipData = provinceUniversityData; // 保留全称数据，用于 tooltip 查找经费
                 visualMax = Math.max(maxVal, 1);
                 showScatter = false;
                 view = 'china';
             } else {
+                // 省级视图（下钻）
                 let fullProvince = currentProvince;
                 const full = getFullName(currentProvince);
                 if (full) fullProvince = full;
@@ -581,7 +588,7 @@
             myChart.off('click');
             myChart.on('click', function(params) {
                 if (currentView === 'china' && params.componentType === 'series' && params.seriesType === 'map') {
-                    let provinceName = params.name;
+                    let provinceName = params.name; // 简称
                     let adcode = provinceAdcodeMap[provinceName];
                     if (!adcode) {
                         const full = getFullName(provinceName);
