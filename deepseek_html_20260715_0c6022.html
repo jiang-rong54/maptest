@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>我的第一个交互式地图</title>
+
+    <!-- 引入 Leaflet 的 CSS 和 JS（通过 CDN 免费使用） -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- 设置地图容器样式，填满整个屏幕 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 100vh;   /* 占满视口高度 */
+            width: 100%;
+        }
+        /* 可选：给弹出框加一点样式 */
+        .leaflet-popup-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .leaflet-popup-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 地图容器 -->
+    <div id="map"></div>
+
+    <script>
+        // ==================== 1. 初始化地图 ====================
+        // 设置地图中心点（中国大致范围）和初始缩放级别
+        const map = L.map('map').setView([35.0, 105.0], 4);
+
+        // ==================== 2. 加载免费底图 ====================
+        // 使用 OpenStreetMap 的瓦片服务（完全免费，无需 API Key）
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 贡献者'
+        }).addTo(map);
+
+        // ==================== 3. 添加数据（标记点） ====================
+        // 每个标记：经纬度 [纬度, 经度]，名称，描述，图片（可选）
+        const cities = [
+            {
+                coords: [39.9042, 116.4074],
+                name: '北京',
+                desc: '中国首都，拥有故宫、长城等世界文化遗产。',
+                img: 'https://picsum.photos/seed/beijing/300/200'  // 随机占位图
+            },
+            {
+                coords: [31.2304, 121.4737],
+                name: '上海',
+                desc: '国际大都市，外滩、东方明珠塔是标志性景观。',
+                img: 'https://picsum.photos/seed/shanghai/300/200'
+            },
+            {
+                coords: [23.1291, 113.2644],
+                name: '广州',
+                desc: '南方经济中心，美食之都，有广州塔和沙面。',
+                img: 'https://picsum.photos/seed/guangzhou/300/200'
+            },
+            {
+                coords: [30.5728, 104.0668],
+                name: '成都',
+                desc: '天府之国，大熊猫基地和宽窄巷子必去。',
+                img: 'https://picsum.photos/seed/chengdu/300/200'
+            }
+        ];
+
+        // 遍历数据，为每个城市创建一个标记
+        cities.forEach(city => {
+            // 创建标记（使用默认图标，也可以自定义）
+            const marker = L.marker(city.coords).addTo(map);
+
+            // 构造弹出框的 HTML 内容
+            const popupContent = `
+                <div style="min-width:200px;">
+                    <h3>🏙️ ${city.name}</h3>
+                    <p>${city.desc}</p>
+                    <img src="${city.img}" alt="${city.name} 图片" />
+                </div>
+            `;
+
+            // 绑定弹出框
+            marker.bindPopup(popupContent);
+        });
+
+        // ==================== 4. （可选）添加缩放控件和比例尺 ====================
+        // 默认已有缩放按钮，再加上一个比例尺
+        L.control.scale({ position: 'bottomleft' }).addTo(map);
+
+        // 控制台提示，方便新手查看
+        console.log('🎉 地图已加载！你可以拖拽、缩放，点击标记查看信息。');
+    </script>
+</body>
+</html>
